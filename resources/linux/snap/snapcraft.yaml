@@ -44,19 +44,52 @@ parts:
       - -usr/share/icons
       - -usr/share/lintian
       - -usr/share/man
+  gtk-common-themes-install:
+    plugin: nil
+    build-packages:
+      - snapd
+    override-pull: |
+      set -eu
+      snap download gtk-common-themes --edge
+      unsquashfs gtk-common-themes*.snap
+    override-build: |
+      set -eu
+      [ -d squashfs-root/ ] || exit 1
+      cp -a squashfs-root/* $SNAPCRAFT_PART_INSTALL/
+  gnome-install:
+    plugin: nil
+    build-packages:
+      - snapd
+    override-pull: |
+      set -eu
+      snap download gnome-3-34-1804 --edge
+      unsquashfs gnome-*.snap
+    override-build: |
+      set -eu
+      [ -d squashfs-root/ ] || exit 1
+      cp -a squashfs-root/* $SNAPCRAFT_PART_INSTALL/gnome-platform
+
 
 apps:
   @@NAME@@:
     command: electron-launch $SNAP/usr/share/@@NAME@@/bin/@@NAME@@ --no-sandbox
     common-id: @@NAME@@.desktop
-    extensions: [gnome-3-34]
     environment:
       DISABLE_WAYLAND: 1
       GSETTINGS_SCHEMA_DIR: $SNAP/usr/share/glib-2.0/schemas
 
   url-handler:
     command: electron-launch $SNAP/usr/share/@@NAME@@/bin/@@NAME@@ --open-url --no-sandbox
-    extensions: [gnome-3-34]
     environment:
       DISABLE_WAYLAND: 1
       GSETTINGS_SCHEMA_DIR: $SNAP/usr/share/glib-2.0/schemas
+
+environment:
+  GTK_USE_PORTAL: '1'
+  SNAP_DESKTOP_RUNTIME: $SNAP/gnome-platform
+
+layout:
+  /usr/lib/$SNAPCRAFT_ARCH_TRIPLET/webkit2gtk-4.0:
+    bind: $SNAP/gnome-platform/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/webkit2gtk-4.0
+  /usr/share/xml/iso-codes:
+    bind: $SNAP/gnome-platform/usr/share/xml/iso-codes
